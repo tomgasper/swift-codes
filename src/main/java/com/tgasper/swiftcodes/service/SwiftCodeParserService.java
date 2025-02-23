@@ -12,8 +12,10 @@ import org.apache.commons.csv.CSVRecord;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 @Service
 public class SwiftCodeParserService {
@@ -35,7 +37,7 @@ public class SwiftCodeParserService {
     }
 
     @Transactional
-    public void parseAndSave(String resourcePath) throws IOException {
+    public void parseAndSave(String filePath) throws IOException {
         CSVFormat csvFormat = CSVFormat.Builder.create()
                 .setHeader(HEADERS)
                 .setSkipHeaderRecord(true)
@@ -45,8 +47,7 @@ public class SwiftCodeParserService {
                 .setTrim(true)
                 .build();
 
-        try (InputStreamReader reader = new InputStreamReader(
-                getClass().getResourceAsStream(resourcePath));
+        try (BufferedReader reader = Files.newBufferedReader(Path.of(filePath));
              CSVParser csvParser = new CSVParser(reader, csvFormat)) {
 
             for (CSVRecord record : csvParser) {
