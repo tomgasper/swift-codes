@@ -108,10 +108,11 @@ public class SwiftCodeParserService {
     }
 
     private Bank getOrCreateBank(String baseSwiftCode, String bankName) {
-        return bankRepository.findBySwiftCode_SwiftCode(baseSwiftCode)
+        return bankRepository.findBySwiftCode(baseSwiftCode)
                 .orElseGet(() -> {
                     Bank bank = new Bank();
                     bank.setBankName(bankName);
+                    bank.setSwiftCode(baseSwiftCode);
                     return bankRepository.save(bank);
                 });
     }

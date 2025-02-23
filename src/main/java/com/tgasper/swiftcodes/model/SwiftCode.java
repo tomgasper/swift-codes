@@ -15,7 +15,7 @@ public class SwiftCode {
     @Pattern(regexp = "^[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?$", message = "Must be in BIC8 or BIC11 format")
     private String swiftCode;
 
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "bank_id", nullable = false)
     private Bank bank;
 
