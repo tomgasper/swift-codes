@@ -1,6 +1,7 @@
 package com.tgasper.swiftcodes.controller;
 
 import com.tgasper.swiftcodes.dto.CountrySwiftCodesResponse;
+import com.tgasper.swiftcodes.dto.request.SwiftCodeRequest;
 import com.tgasper.swiftcodes.dto.SwiftCodeResponse;
 import com.tgasper.swiftcodes.service.SwiftCodeService;
 
@@ -32,7 +33,7 @@ public class SwiftCodeController {
     }
 
     @PostMapping
-    public ResponseEntity<Map<String, String>> addSwiftCode(@RequestBody SwiftCodeResponse request) {
+    public ResponseEntity<Map<String, String>> addSwiftCode(@RequestBody SwiftCodeRequest request) {
         String message = swiftCodeService.addSwiftCode(request);
         return ResponseEntity.ok(Map.of("message", message));
     }

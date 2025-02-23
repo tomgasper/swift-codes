@@ -2,6 +2,7 @@ package com.tgasper.swiftcodes.service;
 
 import com.tgasper.swiftcodes.dto.CountrySwiftCodesResponse;
 import com.tgasper.swiftcodes.dto.SwiftCodeResponse;
+import com.tgasper.swiftcodes.dto.request.SwiftCodeRequest;
 import com.tgasper.swiftcodes.exception.ResourceNotFoundException;
 import com.tgasper.swiftcodes.exception.SwiftCodeValidationException;
 import com.tgasper.swiftcodes.model.Bank;
@@ -10,7 +11,6 @@ import com.tgasper.swiftcodes.model.SwiftCode;
 import com.tgasper.swiftcodes.repository.BankRepository;
 import com.tgasper.swiftcodes.repository.CountryRepository;
 import com.tgasper.swiftcodes.repository.SwiftCodeRepository;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -77,30 +77,30 @@ public class SwiftCodeService {
     }
 
     @Transactional
-    public String addSwiftCode(SwiftCodeResponse request) {
+    public String addSwiftCode(SwiftCodeRequest request) {
         validateSwiftCodeRequest(request);
 
-        Country country = countryRepository.findById(request.getCountryISO2().toUpperCase())
+        Country country = countryRepository.findById(request.countryISO2().toUpperCase())
                 .orElseGet(() -> {
                     Country newCountry = new Country();
-                    newCountry.setIso2Code(request.getCountryISO2());
-                    newCountry.setName(request.getCountryName());
+                    newCountry.setIso2Code(request.countryISO2());
+                    newCountry.setName(request.countryName());
                     return countryRepository.save(newCountry);
                 });
 
-        String baseSwiftCode = request.getSwiftCode().substring(0, 8).toUpperCase();
+        String baseSwiftCode = request.swiftCode().substring(0, 8).toUpperCase();
         Bank bank = bankRepository.findBySwiftCode(baseSwiftCode)
                 .orElseGet(() -> {
                     Bank newBank = new Bank();
-                    newBank.setBankName(request.getBankName());
+                    newBank.setBankName(request.bankName());
                     newBank.setSwiftCode(baseSwiftCode);
                     return bankRepository.save(newBank);
                 });
 
         SwiftCode swiftCode = new SwiftCode();
-        swiftCode.setSwiftCode(request.getSwiftCode().toUpperCase());
+        swiftCode.setSwiftCode(request.swiftCode().toUpperCase());
         swiftCode.setBank(bank);
-        swiftCode.setAddress(request.getAddress());
+        swiftCode.setAddress(request.address());
         swiftCode.setHeadquarter(request.isHeadquarter());
         swiftCode.setCountry(country);
 
@@ -124,20 +124,20 @@ public class SwiftCodeService {
         return "SWIFT code deleted successfully";
     }
 
-    private void validateSwiftCodeRequest(SwiftCodeResponse request) {
+    private void validateSwiftCodeRequest(SwiftCodeRequest request) {
         if (request == null) {
             throw new SwiftCodeValidationException("Request body cannot be null");
         }
-        if (request.getSwiftCode() == null || !request.getSwiftCode().matches("^[A-Za-z]{6}[A-Za-z0-9]{2}([A-Za-z0-9]{3})?$")) {
+        if (request.swiftCode() == null || !request.swiftCode().matches("^[A-Za-z]{6}[A-Za-z0-9]{2}([A-Za-z0-9]{3})?$")) {
             throw new SwiftCodeValidationException("Invalid SWIFT code format");
         }
-        if (request.getBankName() == null || request.getBankName().trim().isEmpty()) {
+        if (request.bankName() == null || request.bankName().trim().isEmpty()) {
             throw new SwiftCodeValidationException("Bank name is required");
         }
-        if (request.getCountryISO2() == null || !request.getCountryISO2().matches("^[A-Za-z]{2}$")) {
+        if (request.countryISO2() == null || !request.countryISO2().matches("^[A-Za-z]{2}$")) {
             throw new SwiftCodeValidationException("Invalid country ISO2 code format");
         }
-        if (request.getCountryName() == null || request.getCountryName().trim().isEmpty()) {
+        if (request.countryName() == null || request.countryName().trim().isEmpty()) {
             throw new SwiftCodeValidationException("Country name is required");
         }
     }
