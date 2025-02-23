@@ -12,7 +12,6 @@ import org.apache.commons.csv.CSVRecord;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
@@ -36,13 +35,18 @@ public class SwiftCodeParserService {
     }
 
     @Transactional
-    public void parseAndSave(String filePath) throws IOException {
+    public void parseAndSave(String resourcePath) throws IOException {
         CSVFormat csvFormat = CSVFormat.Builder.create()
                 .setHeader(HEADERS)
                 .setSkipHeaderRecord(true)
+                .setDelimiter(',')
+                .setQuote('"')
+                .setIgnoreEmptyLines(true)
+                .setTrim(true)
                 .build();
 
-        try (InputStreamReader reader = new InputStreamReader(new FileInputStream(filePath));
+        try (InputStreamReader reader = new InputStreamReader(
+                getClass().getResourceAsStream(resourcePath));
              CSVParser csvParser = new CSVParser(reader, csvFormat)) {
 
             for (CSVRecord record : csvParser) {
@@ -52,14 +56,15 @@ public class SwiftCodeParserService {
     }
 
     private void processRecord(CSVRecord record) {
-        String iso2Code = record.get("COUNTRY ISO2 CODE").toUpperCase();
-        String swiftCodeStr = record.get("SWIFT CODE");
-        String bankName = record.get("NAME");
+        String iso2Code = record.get("COUNTRY ISO2 CODE").trim().toUpperCase();
+        String swiftCodeStr = record.get("SWIFT CODE").trim();
+        String bankName = record.get("NAME").trim();
         String address = determineAddress(record);
         boolean isHeadquarter = swiftCodeStr.endsWith("XXX");
 
         // get or create country
-        Country country = getOrCreateCountry(iso2Code, record.get("COUNTRY NAME").toUpperCase());
+        String countryName = record.get("COUNTRY NAME").trim().toUpperCase();
+        Country country = getOrCreateCountry(iso2Code, countryName);
 
         // get or create bank with base SWIFT code (first 8 characters)
         String baseSwiftCode = swiftCodeStr.substring(0, 8);
@@ -77,13 +82,19 @@ public class SwiftCodeParserService {
     }
 
     private String determineAddress(CSVRecord record) {
-        String address = record.get("ADDRESS");
-        if (address != null && !address.trim().isEmpty()) {
+        String address = record.get("ADDRESS").trim();
+        String townName = record.get("TOWN NAME").trim();
+        String countryName = record.get("COUNTRY NAME").trim();
+
+        if (address != null && !address.isEmpty()) {
             return address;
         }
-        return String.format("%s, %s",
-                record.get("TOWN NAME"),
-                record.get("COUNTRY NAME"));
+        
+        if (!townName.isEmpty()) {
+            return String.format("%s, %s", townName, countryName);
+        }
+        
+        return countryName;
     }
 
     private Country getOrCreateCountry(String iso2Code, String countryName) {
