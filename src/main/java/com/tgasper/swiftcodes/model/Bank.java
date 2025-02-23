@@ -14,7 +14,8 @@ public class Bank {
     @NotNull
     private String bankName;
 
-    @OneToOne(mappedBy = "bank")
+    @Column(name = "swift_code", nullable = false)
+    @NotNull
     private SwiftCode swiftCode;
 
     // Getters and Setters
