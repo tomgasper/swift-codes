@@ -16,7 +16,7 @@ public class Bank {
 
     @Column(name = "swift_code", nullable = false)
     @NotNull
-    private SwiftCode swiftCode;
+    private String swiftCode;
 
     // Getters and Setters
     public Long getId() {
@@ -31,11 +31,11 @@ public class Bank {
         this.bankName = bankName;
     }
 
-    public SwiftCode getSwiftCode() {
+    public String getSwiftCode() {
         return swiftCode;
     }
 
-    public void setSwiftCode(SwiftCode swiftCode) {
+    public void setSwiftCode(String swiftCode) {
         this.swiftCode = swiftCode;
     }
 }
