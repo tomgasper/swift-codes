@@ -62,8 +62,7 @@ public class SwiftCodeService {
                         String.format("Country with ISO2 code %s not found", countryISO2)));
 
         List<SwiftCode> swiftCodes = swiftCodeRepository.findByCountryIso2Code(
-                upperCountryISO2,
-                Sort.by("swiftCode"));
+                upperCountryISO2);
 
         if (swiftCodes.isEmpty()) {
             throw new ResourceNotFoundException(

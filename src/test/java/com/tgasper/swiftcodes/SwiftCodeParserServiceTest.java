@@ -61,7 +61,7 @@ class SwiftCodeParserServiceTest {
             Files.write(tempFile, csvContent.getBytes());
 
             swiftCodeParserService.parseAndSave(tempFile.toAbsolutePath().toString());
-            
+
             verify(swiftCodeRepository, times(2)).save(any(SwiftCode.class));
             verify(countryRepository, times(2)).findById("US");
             verify(bankRepository, times(2)).findBySwiftCode("CITIUS33");

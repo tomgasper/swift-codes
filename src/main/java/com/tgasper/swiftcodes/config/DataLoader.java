@@ -1,6 +1,10 @@
 package com.tgasper.swiftcodes.config;
 
 import java.io.IOException;
+import java.net.URL;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.net.URISyntaxException;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
@@ -19,8 +23,13 @@ public class DataLoader implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
         try {
-            swiftCodeParserService.parseAndSave("/swift-codes.csv");
-        } catch (IOException e) {
+            URL resource = getClass().getResource("/swift-codes.csv");
+            if (resource == null) {
+                throw new IOException("Could not find swift-codes.csv in resources");
+            }
+            Path csvPath = Paths.get(resource.toURI());
+            swiftCodeParserService.parseAndSave(csvPath.toString());
+        } catch (IOException | URISyntaxException e) {
             e.printStackTrace();
         }
     }
