@@ -59,6 +59,7 @@ public class SwiftCodeService {
 
     @Transactional
     public SwiftCode addSwiftCode(SwiftCode swiftCode) {
+        validateSwiftCode(swiftCode);
 
         String swiftCodeStr = swiftCode.getSwiftCode().toUpperCase();
         if (swiftCodeRepository.existsById(swiftCodeStr)) {
@@ -83,5 +84,20 @@ public class SwiftCodeService {
         }
 
         swiftCodeRepository.deleteById(swiftCode.toUpperCase());
+    }
+
+    private void validateSwiftCode(SwiftCode swiftCode) {
+        if (swiftCode == null) {
+            throw new SwiftCodeValidationException("SwiftCode object cannot be null");
+        }
+        if (swiftCode.getSwiftCode() == null || !swiftCode.getSwiftCode().matches("^[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?$")) {
+            throw new SwiftCodeValidationException("Invalid SWIFT code format");
+        }
+        if (swiftCode.getBank() == null) {
+            throw new SwiftCodeValidationException("Bank information is required");
+        }
+        if (swiftCode.getCountry() == null) {
+            throw new SwiftCodeValidationException("Country information is required");
+        }
     }
 }
