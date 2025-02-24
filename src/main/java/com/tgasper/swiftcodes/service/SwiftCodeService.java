@@ -124,9 +124,16 @@ public class SwiftCodeService {
         }
 
         String upperSwiftCode = swiftCode.toUpperCase();
-        if (!swiftCodeRepository.existsById(upperSwiftCode)) {
+
+        // get count of the swift codes
+        long count = swiftCodeRepository.countBySwiftCodeStartingWith(upperSwiftCode);
+        if (count == 0) {
             throw new ResourceNotFoundException(
                     String.format("SWIFT code %s not found", swiftCode));
+        }
+        else if (count == 1) {
+            // delete the entry from bank table as well
+            bankRepository.deleteBySwiftCode(upperSwiftCode);
         }
 
         swiftCodeRepository.deleteById(upperSwiftCode);

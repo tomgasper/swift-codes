@@ -7,4 +7,5 @@ import java.util.Optional;
 
 public interface BankRepository extends JpaRepository<Bank, Long> {
     Optional<Bank> findBySwiftCode(String swiftCode);
+    void deleteBySwiftCode(String swiftCode);
 } 
