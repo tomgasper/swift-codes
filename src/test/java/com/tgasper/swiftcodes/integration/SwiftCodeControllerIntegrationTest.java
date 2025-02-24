@@ -79,11 +79,11 @@ class SwiftCodeControllerIntegrationTest extends BaseTest {
                 .andExpect(jsonPath("$.bankName", is("PKO BANK POLSKI")))
                 .andExpect(jsonPath("$.countryISO2", is("PL")))
                 .andExpect(jsonPath("$.address", is("UL. PULAWSKA 15, WARSZAWA")))
-                .andExpect(jsonPath("$.isHeadquarter", is(true)))
+                .andExpect(jsonPath("$.headquarter", is(true)))
                 .andExpect(jsonPath("$.branches", hasSize(1)))
                 .andExpect(jsonPath("$.branches[0].swiftCode", is("BPKOPLPWKRA")))
                 .andExpect(jsonPath("$.branches[0].address", is("RYNEK GLOWNY 31, KRAKOW")))
-                .andExpect(jsonPath("$.branches[0].isHeadquarter", is(false)));
+                .andExpect(jsonPath("$.branches[0].headquarter", is(false)));
     }
 
     @Test
@@ -93,7 +93,7 @@ class SwiftCodeControllerIntegrationTest extends BaseTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.swiftCode", is("BPKOPLPWKRA")))
                 .andExpect(jsonPath("$.bankName", is("PKO BANK POLSKI")))
-                .andExpect(jsonPath("$.isHeadquarter", is(false)))
+                .andExpect(jsonPath("$.headquarter", is(false)))
                 .andExpect(jsonPath("$.branches").doesNotExist());
     }
 
