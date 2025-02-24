@@ -126,7 +126,7 @@ public class SwiftCodeService {
 
         // get count of the swift codes
         String baseSwiftCode = swiftCode.substring(0, 8);
-        long count = swiftCodeRepository.countBySwiftCodeStartingWith(baseSwiftCode);
+        long count = swiftCodeRepository.countBySwiftCodeStartingWith(swiftCode);
         if (count == 0) {
             // nothing to delete
             throw new ResourceNotFoundException(
