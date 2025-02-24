@@ -60,6 +60,10 @@ public class SwiftCodeService {
             throw new SwiftCodeValidationException("Country ISO2 code cannot be null or empty");
         }
 
+        if (!countryISO2.matches("^[A-Za-z]{2}$")) {
+            throw new SwiftCodeValidationException("Invalid country code format. Must be exactly 2 letters.");
+        }
+
         String upperCountryISO2 = countryISO2.toUpperCase();
         Country country = countryRepository.findById(upperCountryISO2)
                 .orElseThrow(() -> new ResourceNotFoundException(
