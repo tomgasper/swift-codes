@@ -4,10 +4,7 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 
 @Entity
-@Table(name = "banks",
-       indexes = {
-           @Index(name = "idx_bank_swift_code", columnList = "swift_code", unique = true)
-       })
+@Table(name = "banks")
 public class Bank {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -17,7 +14,7 @@ public class Bank {
     @NotNull
     private String bankName;
 
-    @Column(name = "swift_code", nullable = false)
+    @Column(name = "swift_code", nullable = false, unique = true)
     @NotNull
     private String swiftCode;
 
