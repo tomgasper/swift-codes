@@ -6,6 +6,7 @@ A Spring Boot REST API service for managing SWIFT/BIC codes. This application pr
 
 - CSV data parsing and import
 - CRUD operations for SWIFT codes
+- CLI import/server mode
 
 
 ## Prerequisites
@@ -29,6 +30,20 @@ src/main/java/com/tgasper/swiftcodes/
 └── config/           # Application configuration
 ```
 
+## Design choices
+## Design Choices
+
+- **Simplified Address Storage:**  
+  Since the API doesn't require town-level filtering and doesn't accept detailed address information in the POST request, the address is stored as a single string. This choice simplifies data entry and processing without impacting core functionality.
+
+- **Efficient Swift Code Representation:**  
+  The full 11-character SWIFT code is stored alongside its base (first 8 characters) to improve query performance and simplify the entity model. Stricter normalization is possible by storing only the branch codes in the *swiftcodes* table.
+
+- **Consistent Bank Naming Assumption:**  
+  All SWIFT codes sharing the same first 8 characters are assumed to belong to the same bank. This minimizes redundancy by ensuring that any bank name change needs to be updated in only one place.
+
+Database schema:
+![Schema](https://github.com/tomgasper/swift-codes/blob/main/example/diagram.png)
 
 ## Local Development Setup
 
@@ -38,7 +53,13 @@ git clone https://github.com/tomgasper/swift-codes.git
 cd swift-codes
 ```
 
-2. Setup the database:
+2. Download Maven Wrapper:
+```
+mvn wrapper:wrapper
+```
+This will create the necessary Maven wrapper files (mvnw, mvnw.cmd, and .mvn directory)
+
+3. Setup the database:
    - The application uses PostgreSQL
    - Default configuration can be found in `application.properties`
    - For local development, ensure PostgreSQL is running on port 5500
@@ -123,7 +144,7 @@ The project includes:
 Key configuration files:
 - `application.properties`: Default configuration
 - `application-docker.yml`: Docker environment configuration
-- `application-test.properties`: Test configuration
+- `(test directory) application.properties`: Test configuration
 
 ### Environment Variables
 
