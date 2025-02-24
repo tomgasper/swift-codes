@@ -3,6 +3,7 @@ package com.tgasper.swiftcodes.service;
 import com.tgasper.swiftcodes.dto.CountrySwiftCodesResponse;
 import com.tgasper.swiftcodes.dto.SwiftCodeResponse;
 import com.tgasper.swiftcodes.dto.request.SwiftCodeRequest;
+import com.tgasper.swiftcodes.exception.ConflictException;
 import com.tgasper.swiftcodes.exception.ResourceNotFoundException;
 import com.tgasper.swiftcodes.exception.SwiftCodeValidationException;
 import com.tgasper.swiftcodes.model.Bank;
@@ -87,6 +88,11 @@ public class SwiftCodeService {
     @Transactional
     public String addSwiftCode(SwiftCodeRequest request) {
         validateSwiftCodeRequest(request);
+
+        // check if SWIFT code already exists
+        if (swiftCodeRepository.findById(request.swiftCode().toUpperCase()).isPresent()) {
+            throw new ConflictException("SWIFT code " + request.swiftCode() + " already exists");
+        }
 
         Country country = countryRepository.findById(request.countryISO2().toUpperCase())
                 .orElseGet(() -> {
