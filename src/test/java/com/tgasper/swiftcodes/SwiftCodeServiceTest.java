@@ -25,6 +25,7 @@ import com.tgasper.swiftcodes.model.SwiftCode;
 import com.tgasper.swiftcodes.repository.BankRepository;
 import com.tgasper.swiftcodes.repository.CountryRepository;
 import com.tgasper.swiftcodes.repository.SwiftCodeRepository;
+import com.tgasper.swiftcodes.service.BankService;
 import com.tgasper.swiftcodes.service.SwiftCodeService;
 
 @ExtendWith(MockitoExtension.class)
@@ -35,6 +36,8 @@ class SwiftCodeServiceTest {
     private BankRepository bankRepository;
     @Mock
     private CountryRepository countryRepository;
+    @Mock
+    private BankService bankService;
     @InjectMocks
     private SwiftCodeService swiftCodeService;
 
@@ -80,7 +83,7 @@ class SwiftCodeServiceTest {
             .thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class, () ->
-            swiftCodeService.getSwiftCodeDetails("INVALID123"));
+            swiftCodeService.getSwiftCodeDetails("ABCDEF12XXX"));
     }
 
     @Test
@@ -89,8 +92,12 @@ class SwiftCodeServiceTest {
         SwiftCodeRequest request = createTestSwiftCodeRequest();
         when(countryRepository.findById("US"))
             .thenReturn(Optional.empty());
-        when(bankRepository.findBySwiftCode("CITIUS12"))
-            .thenReturn(Optional.empty());
+        
+        Bank mockBank = new Bank();
+        mockBank.setBankName("CITIBANK NA");
+        mockBank.setSwiftCode("CITIUS12");
+        when(bankService.getOrCreateBank("CITIUS12", "CITIBANK NA"))
+            .thenReturn(mockBank);
 
         // act
         String result = swiftCodeService.addSwiftCode(request);

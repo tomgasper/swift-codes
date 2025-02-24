@@ -84,4 +84,127 @@ class SwiftCodeParserServiceTest {
         assertThrows(IOException.class, () -> 
             swiftCodeParserService.parseAndSave(invalidCsv));
     }
+
+    @Test
+    void shouldParseValidHeadquarterRow() throws IOException {
+        // test CSV with HQ(XXX) SWIFT code
+        String csvContent = """
+            COUNTRY ISO2 CODE,SWIFT CODE,CODE TYPE,NAME,ADDRESS,TOWN NAME,COUNTRY NAME,TIME ZONE
+            US,CITIUS33XXX,1,CITIBANK NA,399 PARK AVENUE,NEW YORK,UNITED STATES,EST
+            """;
+        
+        // Setup mocks
+        when(countryRepository.findById("US")).thenReturn(Optional.empty());
+        when(bankRepository.findBySwiftCode("CITIUS33")).thenReturn(Optional.empty());
+        
+        // Execute test
+        Path tempFile = createTempFileWithContent(csvContent);
+        swiftCodeParserService.parseAndSave(tempFile.toString());
+        
+        // Verify
+        verify(swiftCodeRepository).save(argThat(swiftCode -> 
+            swiftCode.getSwiftCode().equals("CITIUS33XXX") &&
+            swiftCode.isHeadquarter()
+        ));
+        
+        Files.deleteIfExists(tempFile);
+    }
+
+    @Test
+    void shouldParseValidBranchRow() throws IOException {
+        // test CSV with branch (non-XXX) SWIFT code
+        String csvContent = """
+            COUNTRY ISO2 CODE,SWIFT CODE,CODE TYPE,NAME,ADDRESS,TOWN NAME,COUNTRY NAME,TIME ZONE
+            US,CITIUS33LAX,1,CITIBANK NA,400 GRAND AVE,LOS ANGELES,UNITED STATES,PST
+            """;
+        
+        when(countryRepository.findById("US")).thenReturn(Optional.empty());
+        when(bankRepository.findBySwiftCode("CITIUS33")).thenReturn(Optional.empty());
+        
+        Path tempFile = createTempFileWithContent(csvContent);
+        swiftCodeParserService.parseAndSave(tempFile.toString());
+        
+        verify(swiftCodeRepository).save(argThat(swiftCode -> 
+            swiftCode.getSwiftCode().equals("CITIUS33LAX") &&
+            !swiftCode.isHeadquarter()
+        ));
+        
+        Files.deleteIfExists(tempFile);
+    }
+
+    @Test
+    void shouldTreat8CharacterCodeAsHeadquarter() throws IOException {
+        String csvContent = """
+            COUNTRY ISO2 CODE,SWIFT CODE,CODE TYPE,NAME,ADDRESS,TOWN NAME,COUNTRY NAME,TIME ZONE
+            US,CITIUS33,1,CITIBANK NA,399 PARK AVENUE,NEW YORK,UNITED STATES,EST
+            """;
+        
+        when(countryRepository.findById("US")).thenReturn(Optional.empty());
+        when(bankRepository.findBySwiftCode("CITIUS33")).thenReturn(Optional.empty());
+        
+        Path tempFile = createTempFileWithContent(csvContent);
+        swiftCodeParserService.parseAndSave(tempFile.toString());
+        
+        verify(swiftCodeRepository).save(argThat(swiftCode -> 
+            swiftCode.getSwiftCode().equals("CITIUS33XXX") &&
+            swiftCode.isHeadquarter()
+        ));
+        
+        Files.deleteIfExists(tempFile);
+    }
+
+    @Test
+    void shouldNormalizeCountryCode() throws IOException {
+        String csvContent = """
+            COUNTRY ISO2 CODE,SWIFT CODE,CODE TYPE,NAME,ADDRESS,TOWN NAME,COUNTRY NAME,TIME ZONE
+            us,CITIUS33XXX,1,CITIBANK NA,399 PARK AVENUE,NEW YORK,United States,EST
+            """;
+        
+        when(countryRepository.findById("US")).thenReturn(Optional.empty());
+        when(bankRepository.findBySwiftCode("CITIUS33")).thenReturn(Optional.empty());
+        
+        Path tempFile = createTempFileWithContent(csvContent);
+        swiftCodeParserService.parseAndSave(tempFile.toString());
+        
+        verify(countryRepository).save(argThat(country -> 
+            country.getIso2Code().equals("US") &&
+            country.getName().equals("UNITED STATES")
+        ));
+        
+        Files.deleteIfExists(tempFile);
+    }
+
+    @Test
+    void shouldHandleAddressVariations() throws IOException {
+        String csvContent = """
+            COUNTRY ISO2 CODE,SWIFT CODE,CODE TYPE,NAME,ADDRESS,TOWN NAME,COUNTRY NAME,TIME ZONE
+            US,CITIUS33XXX,1,CITIBANK NA,,NEW YORK,UNITED STATES,EST
+            GB,BARCGB22XXX,1,BARCLAYS,1 CHURCHILL PLACE,,UNITED KINGDOM,GMT
+            FR,BNPAFR21,1,BNP PARIBAS,,,FRANCE,CET
+            """;
+        
+        when(countryRepository.findById(anyString())).thenReturn(Optional.empty());
+        when(bankRepository.findBySwiftCode(anyString())).thenReturn(Optional.empty());
+        
+        Path tempFile = createTempFileWithContent(csvContent);
+        swiftCodeParserService.parseAndSave(tempFile.toString());
+        
+        verify(swiftCodeRepository).save(argThat(swiftCode -> 
+            swiftCode.getAddress().equals("NEW YORK, UNITED STATES")
+        ));
+        verify(swiftCodeRepository).save(argThat(swiftCode -> 
+            swiftCode.getAddress().equals("1 CHURCHILL PLACE")
+        ));
+        verify(swiftCodeRepository).save(argThat(swiftCode -> 
+            swiftCode.getAddress().equals("FRANCE")
+        ));
+        
+        Files.deleteIfExists(tempFile);
+    }
+
+    private Path createTempFileWithContent(String content) throws IOException {
+        Path tempFile = Files.createTempFile("test-swift-codes", ".csv");
+        Files.writeString(tempFile, content);
+        return tempFile;
+    }
 }

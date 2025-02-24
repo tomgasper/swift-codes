@@ -61,6 +61,11 @@ public class SwiftCodeParserService {
         String swiftCodeStr = record.get("SWIFT CODE").trim();
         String bankName = record.get("NAME").trim();
         String address = determineAddress(record);
+
+        // normalize SWIFT code -> append XXX for 8 char codes
+        if (swiftCodeStr.length() == 8) {
+            swiftCodeStr = swiftCodeStr + "XXX";
+        }
         boolean isHeadquarter = swiftCodeStr.endsWith("XXX");
 
         // get or create country
