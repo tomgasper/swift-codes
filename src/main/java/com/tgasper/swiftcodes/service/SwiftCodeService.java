@@ -21,14 +21,15 @@ import java.util.stream.Collectors;
 public class SwiftCodeService {
     private final SwiftCodeRepository swiftCodeRepository;
     private final CountryRepository countryRepository;
-    private final BankRepository bankRepository;
+    private final BankService bankService;
 
     public SwiftCodeService(SwiftCodeRepository swiftCodeRepository,
                           CountryRepository countryRepository,
-                          BankRepository bankRepository) {
+                          BankRepository bankRepository,
+                          BankService bankService) {
         this.swiftCodeRepository = swiftCodeRepository;
         this.countryRepository = countryRepository;
-        this.bankRepository = bankRepository;
+        this.bankService = bankService;
     }
 
     public SwiftCodeResponse getSwiftCodeDetails(String inputCode) {
@@ -37,13 +38,7 @@ public class SwiftCodeService {
             throw new SwiftCodeValidationException("SWIFT code cannot be null or empty");
         }
 
-        // swift code length must be 8 or 11
-        if (inputCode.length() != 8 && inputCode.length() != 11) {
-            throw new SwiftCodeValidationException("Invalid SWIFT code length");
-        }
-
-        // assume headquarter if length is 8 and format to uppercase
-        String swiftCode = (inputCode.length() == 8 ? (inputCode + "XXX") : inputCode).toUpperCase();
+        String swiftCode = getDefaultSwiftCode(inputCode);
 
         SwiftCode mainCode = swiftCodeRepository.findById(swiftCode)
                 .orElseThrow(() -> new ResourceNotFoundException(
@@ -98,13 +93,7 @@ public class SwiftCodeService {
                 });
 
         String baseSwiftCode = request.swiftCode().substring(0, 8).toUpperCase();
-        Bank bank = bankRepository.findBySwiftCode(baseSwiftCode)
-                .orElseGet(() -> {
-                    Bank newBank = new Bank();
-                    newBank.setBankName(request.bankName());
-                    newBank.setSwiftCode(baseSwiftCode);
-                    return bankRepository.save(newBank);
-                });
+        Bank bank = bankService.getOrCreateBank(baseSwiftCode, request.bankName());
 
         SwiftCode swiftCode = new SwiftCode();
         swiftCode.setSwiftCode(request.swiftCode().toUpperCase());
@@ -118,26 +107,41 @@ public class SwiftCodeService {
     }
 
     @Transactional
-    public String deleteSwiftCode(String swiftCode) {
-        if (swiftCode == null || swiftCode.trim().isEmpty()) {
+    public String deleteSwiftCode(String inputCode) {
+        if (inputCode == null || inputCode.trim().isEmpty()) {
             throw new SwiftCodeValidationException("SWIFT code cannot be null or empty");
         }
 
-        String upperSwiftCode = swiftCode.toUpperCase();
+        String swiftCode = getDefaultSwiftCode(inputCode);
 
         // get count of the swift codes
-        long count = swiftCodeRepository.countBySwiftCodeStartingWith(upperSwiftCode);
+        String baseSwiftCode = swiftCode.substring(0, 8);
+        long count = swiftCodeRepository.countBySwiftCodeStartingWith(baseSwiftCode);
         if (count == 0) {
+            // nothing to delete
             throw new ResourceNotFoundException(
                     String.format("SWIFT code %s not found", swiftCode));
         }
         else if (count == 1) {
             // delete the entry from bank table as well
-            bankRepository.deleteBySwiftCode(upperSwiftCode);
+            swiftCodeRepository.deleteById(swiftCode);
+            bankService.deleteBank(baseSwiftCode);
+            return "SWIFT code deleted successfully";
+        } else {
+            // just delete the entry from swift codes table
+            swiftCodeRepository.deleteById(swiftCode);
+            return "SWIFT code deleted successfully";
+        }
+    }
+
+    private String getDefaultSwiftCode(String inputSwiftCode) {
+        // swift code length must be 8 or 11
+        if (inputSwiftCode.length() != 8 && inputSwiftCode.length() != 11) {
+            throw new SwiftCodeValidationException("Invalid SWIFT code length");
         }
 
-        swiftCodeRepository.deleteById(upperSwiftCode);
-        return "SWIFT code deleted successfully";
+        // assume headquarter if length is 8 and format to uppercase
+        return (inputSwiftCode.length() == 8 ? (inputSwiftCode + "XXX") : inputSwiftCode).toUpperCase();
     }
 
     private void validateSwiftCodeRequest(SwiftCodeRequest request) {
