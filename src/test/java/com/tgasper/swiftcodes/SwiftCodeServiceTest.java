@@ -114,6 +114,20 @@ class SwiftCodeServiceTest {
             swiftCodeService.addSwiftCode(invalidRequest));
     }
 
+    @Test
+    void shouldNotReturnBranchesPropertyForBranch() {
+        // arrange
+        SwiftCode mainCode = createTestSwiftCode("CITIUS12ABC", false);
+        when(swiftCodeRepository.findById("CITIUS12ABC"))
+                .thenReturn(Optional.of(mainCode));
+
+        // act
+        SwiftCodeResponse response = swiftCodeService.getSwiftCodeDetails("CITIUS12ABC");
+
+        // assert
+        assertNull(response.getBranches());
+    }
+
     private SwiftCode createTestSwiftCode(String code, boolean isHq) {
         SwiftCode swiftCode = new SwiftCode();
         swiftCode.setSwiftCode(code);
@@ -141,6 +155,19 @@ class SwiftCodeServiceTest {
             "TEST ADDRESS",
             true
         );
+        return request;
+    }
+
+    private SwiftCodeRequest createTestBranchSwiftCodeRequest() {
+        SwiftCodeRequest request = new SwiftCodeRequest(
+               "CITIUS12ABC",
+                "CITIBANK NA",
+                "US",
+                "UNITED STATES",
+                "TEST ADDRESS",
+                false
+        );
+
         return request;
     }
 }
