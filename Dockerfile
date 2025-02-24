@@ -1,8 +1,10 @@
-FROM eclipse-temurin:22-jdk AS builder
+FROM maven:3.9.6-eclipse-temurin-22-jammy AS builder
 
 WORKDIR /app
-COPY . .
-RUN ./mvnw clean package
+COPY pom.xml .
+COPY src ./src
+
+RUN mvn clean package
 
 FROM eclipse-temurin:22-jre
 
