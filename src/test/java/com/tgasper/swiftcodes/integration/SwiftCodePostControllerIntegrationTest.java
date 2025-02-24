@@ -44,13 +44,13 @@ class SwiftCodePostControllerIntegrationTest extends BaseTest {
 
     @Override
     protected void setupTestData() {
-        // Create test country
+        // create test country
         Country poland = new Country();
         poland.setIso2Code("PL");
         poland.setName("POLAND");
         countryRepository.save(poland);
 
-        // Create test bank with HQ
+        // create test bank with HQ
         Bank pkoBp = new Bank();
         pkoBp.setSwiftCode("BPKOPLPW");
         pkoBp.setBankName("PKO BANK POLSKI");
@@ -79,10 +79,9 @@ class SwiftCodePostControllerIntegrationTest extends BaseTest {
         mockMvc.perform(post("/v1/swift-codes")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isCreated())
+                .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message", is("SWIFT code added successfully")));
 
-        // Verify it's retrievable
         mockMvc.perform(get("/v1/swift-codes/PKOPPLPWXXX"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.isHeadquarter", is(true)));
@@ -102,7 +101,7 @@ class SwiftCodePostControllerIntegrationTest extends BaseTest {
         mockMvc.perform(post("/v1/swift-codes")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isCreated());
+                .andExpect(status().isOk());
 
         // Verify it's associated with HQ
         mockMvc.perform(get("/v1/swift-codes/BPKOPLPWXXX"))
@@ -171,7 +170,7 @@ class SwiftCodePostControllerIntegrationTest extends BaseTest {
             "PL",
             "POLAND",
             "WARSZAWA, PULAWSKA 15",
-            false  // Inconsistent with XXX ending
+            false  // inconsistent with XXX ending
         );
 
         mockMvc.perform(post("/v1/swift-codes")
@@ -195,9 +194,10 @@ class SwiftCodePostControllerIntegrationTest extends BaseTest {
         mockMvc.perform(post("/v1/swift-codes")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isCreated());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message", is("SWIFT code added successfully")));
 
-        // Verify country code is uppercase in response
+        // verify correct return JSON message
         mockMvc.perform(get("/v1/swift-codes/PKOPPLPWGDA"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.countryISO2", is("PL")));

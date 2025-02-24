@@ -170,5 +170,10 @@ public class SwiftCodeService {
         if (request.countryName() == null || request.countryName().trim().isEmpty()) {
             throw new SwiftCodeValidationException("Country name is required");
         }
+        
+        boolean hasXXXSuffix = request.swiftCode().endsWith("XXX");
+        if (hasXXXSuffix != request.isHeadquarter()) {
+            throw new SwiftCodeValidationException("Inconsistent headquarters flag: SWIFT codes ending with 'XXX' must be marked as headquarters and vice versa");
+        }
     }
 }
