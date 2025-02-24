@@ -6,7 +6,11 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 @Entity
-@Table(name = "swift_codes")
+@Table(name = "swift_codes",
+       indexes = {
+           @Index(name = "idx_swift_code_country", columnList = "country_iso2_code"),
+           @Index(name = "idx_swift_code_bank", columnList = "bank_id")
+       })
 public class SwiftCode {
     @Id
     @Column(name = "swift_code")

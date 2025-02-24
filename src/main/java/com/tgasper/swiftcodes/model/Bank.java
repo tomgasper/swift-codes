@@ -4,7 +4,10 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 
 @Entity
-@Table(name = "banks")
+@Table(name = "banks",
+       indexes = {
+           @Index(name = "idx_bank_swift_code", columnList = "swift_code", unique = true)
+       })
 public class Bank {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
