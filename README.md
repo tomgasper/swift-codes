@@ -1,56 +1,135 @@
 # SwiftCodes Application
 
-This Spring Boot application provides REST APIs for managing Swift codes. It uses PostgreSQL as the database and includes CSV parsing capabilities.
+A Spring Boot REST API service for managing SWIFT/BIC codes. This application provides endpoints for querying, adding, and managing bank SWIFT codes.
+
+## Functionality
+
+- CSV data parsing and import
+- CRUD operations for SWIFT codes
+
 
 ## Prerequisites
 
-- Java 17 or higher
-- Maven 3.6 or higher
-- Docker (for PostgreSQL container)
-- Docker Compose
+- Java 22
+- Maven 3.12+
+- Docker and Docker Compose
+- PostgreSQL 16 (if running locally)
 
 ## Project Structure
 
 ```
-src/main/java/com/example/swiftcodes/
+src/main/java/com/tgasper/swiftcodes/
 ├── SwiftCodesApplication.java
-├── controller/
-├── service/
-├── repository/
-├── model/
-└── config/
+├── controller/         # REST controllers
+├── service/           # Business logic
+├── repository/        # Data access layer
+├── model/            # Domain entities
+├── dto/              # Data transfer objects
+├── exception/        # Custom exceptions
+└── config/           # Application configuration
 ```
 
-## Building the Project
 
-To build the project, run:
+## Local Development Setup
 
-```bash
-mvn clean install
+1. Clone the repository:
+```
+git clone https://github.com/tomgasper/swift-codes.git
+cd swift-codes
+```
+
+2. Setup the database:
+   - The application uses PostgreSQL
+   - Default configuration can be found in `application.properties`
+   - For local development, ensure PostgreSQL is running on port 5500
+
+```
+docker-compose up -d db
+```
+
+3. Build the project:
+```
+./mvnw clean install
 ```
 
 ## Running the Application
 
-1. Start the PostgreSQL database:
-```bash
-docker-compose up -d
-```
+### Using Docker (Recommended)
 
-2. Run the application:
-```bash
-mvn spring-boot:run
+1. Build and start the containers:
+```
+docker-compose up -d
 ```
 
 The application will be available at `http://localhost:8080`
 
-## Running Tests
+#### Local Development
 
-To run the tests:
-
-```bash
-mvn test
+1. Start PostgreSQL:
+```
+docker-compose up -d db
 ```
 
-## API Documentation
+2. Run the application:
+```
+./mvnw spring-boot:run
+```
 
-API documentation will be available at `http://localhost:8080/swagger-ui.html` once implemented.
+
+## Data Import
+
+The application supports importing SWIFT codes from CSV files. You can run the import in two ways:
+
+1. Default import (uses bundled data):
+```
+./mvnw spring-boot:run
+```
+
+2. Custom import file:
+```
+./mvnw spring-boot:run -Dspring-boot.run.arguments="--import=/path/to/your/file.csv"
+```
+
+3. Server-only mode (no import):
+```
+./mvnw spring-boot:run -Dspring-boot.run.arguments="--server"
+```
+
+## Testing
+
+### Running Tests
+
+Run all tests:
+```
+./mvnw test
+```
+
+Run specific test class:
+```
+./mvnw test -Dtest=SwiftCodeServiceTest
+```
+
+### Test Coverage
+
+The project includes:
+- Unit tests for services and utilities
+- Integration tests for controllers
+- CSV parsing tests
+
+## Configuration
+
+### Application Properties
+
+Key configuration files:
+- `application.properties`: Default configuration
+- `application-docker.yml`: Docker environment configuration
+- `application-test.properties`: Test configuration
+
+### Environment Variables
+
+When running with Docker, you can configure:
+- `SPRING_DATASOURCE_URL`
+- `SPRING_DATASOURCE_USERNAME`
+- `SPRING_DATASOURCE_PASSWORD`
+- `SPRING_JPA_HIBERNATE_DDL_AUTO`
+- `LOGGING_LEVEL_SPRING`
