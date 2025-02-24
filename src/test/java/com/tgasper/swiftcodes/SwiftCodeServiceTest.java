@@ -3,6 +3,8 @@ package com.tgasper.swiftcodes;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
+import static org.mockito.ArgumentMatchers.any;
 
 import java.util.Arrays;
 import java.util.Optional;
@@ -38,35 +40,35 @@ class SwiftCodeServiceTest {
 
     @Test
     void shouldGetSwiftCodeDetails() {
-        // Setup
-        SwiftCode mainCode = createTestSwiftCode("CITIUS33XXX", true);
-        when(swiftCodeRepository.findById("CITIUS33XXX"))
+        // arrange
+        SwiftCode mainCode = createTestSwiftCode("CITIUS12XXX", true);
+        when(swiftCodeRepository.findById("CITIUS12XXX"))
             .thenReturn(Optional.of(mainCode));
 
-        // Execute
-        SwiftCodeResponse response = swiftCodeService.getSwiftCodeDetails("CITIUS33XXX");
+        // act
+        SwiftCodeResponse response = swiftCodeService.getSwiftCodeDetails("CITIUS12XXX");
 
-        // Verify
+        // assert
         assertNotNull(response);
-        assertEquals("CITIUS33XXX", response.getSwiftCode());
+        assertEquals("CITIUS12XXX", response.getSwiftCode());
         assertTrue(response.isHeadquarter());
     }
 
     @Test
     void shouldGetHeadquarterWithBranches() {
-        // Setup
-        SwiftCode hq = createTestSwiftCode("CITIUS33XXX", true);
-        SwiftCode branch = createTestSwiftCode("CITIUS33LAX", false);
+        // arrange
+        SwiftCode hq = createTestSwiftCode("CITIUS12XXX", true);
+        SwiftCode branch = createTestSwiftCode("CITIUS12LAX", false);
         
-        when(swiftCodeRepository.findById("CITIUS33XXX"))
+        when(swiftCodeRepository.findById("CITIUS12XXX"))
             .thenReturn(Optional.of(hq));
-        when(swiftCodeRepository.findBySwiftCodeStartingWith("CITIUS33"))
+        when(swiftCodeRepository.findBySwiftCodeStartingWith("CITIUS12"))
             .thenReturn(Arrays.asList(hq, branch));
 
-        // Execute
-        SwiftCodeResponse response = swiftCodeService.getSwiftCodeDetails("CITIUS33XXX");
+        // act
+        SwiftCodeResponse response = swiftCodeService.getSwiftCodeDetails("CITIUS12XXX");
 
-        // Verify
+        // assert
         assertNotNull(response);
         assertNotNull(response.getBranches());
         assertEquals(1, response.getBranches().size());
@@ -83,17 +85,17 @@ class SwiftCodeServiceTest {
 
     @Test
     void shouldAddNewSwiftCode() {
-        // Setup
+        // arrange
         SwiftCodeRequest request = createTestSwiftCodeRequest();
         when(countryRepository.findById("US"))
             .thenReturn(Optional.empty());
-        when(bankRepository.findBySwiftCode("CITIUS33"))
+        when(bankRepository.findBySwiftCode("CITIUS12"))
             .thenReturn(Optional.empty());
 
-        // Execute
+        // act
         String result = swiftCodeService.addSwiftCode(request);
 
-        // Verify
+        // assert
         assertEquals("SWIFT code added successfully", result);
         verify(swiftCodeRepository).save(any(SwiftCode.class));
     }
@@ -132,7 +134,7 @@ class SwiftCodeServiceTest {
 
     private SwiftCodeRequest createTestSwiftCodeRequest() {
         SwiftCodeRequest request = new SwiftCodeRequest(
-            "CITIUS33XXX",
+            "CITIUS12XXX",
             "CITIBANK NA",
             "US",
             "UNITED STATES",
