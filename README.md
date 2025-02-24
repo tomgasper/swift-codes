@@ -30,14 +30,13 @@ src/main/java/com/tgasper/swiftcodes/
 └── config/           # Application configuration
 ```
 
-## Design choices
 ## Design Choices
 
 - **Simplified Address Storage:**  
   Since the API doesn't require town-level filtering and doesn't accept detailed address information in the POST request, the address is stored as a single string. This choice simplifies data entry and processing without impacting core functionality.
 
 - **Efficient Swift Code Representation:**  
-  The full 11-character SWIFT code is stored alongside its base (first 8 characters) to improve query performance and simplify the entity model. Stricter normalization is possible by storing only the branch codes in the *swiftcodes* table.
+  The full 11-character SWIFT code is stored alongside its base (first 8 characters) to improve query performance and simplify the entity model. Stricter normalization is possible by storing only the branch codes in the *swift_codes* table.
 
 - **Consistent Bank Naming Assumption:**  
   All SWIFT codes sharing the same first 8 characters are assumed to belong to the same bank. This minimizes redundancy by ensuring that any bank name change needs to be updated in only one place.
