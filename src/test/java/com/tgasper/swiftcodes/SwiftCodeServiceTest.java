@@ -54,7 +54,7 @@ class SwiftCodeServiceTest {
         // assert
         assertNotNull(response);
         assertEquals("CITIUS12XXX", response.getSwiftCode());
-        assertTrue(response.isHeadquarter());
+        assertTrue(response.getIsHeadquarter());
     }
 
     @Test
@@ -162,19 +162,6 @@ class SwiftCodeServiceTest {
             "TEST ADDRESS",
             true
         );
-        return request;
-    }
-
-    private SwiftCodeRequest createTestBranchSwiftCodeRequest() {
-        SwiftCodeRequest request = new SwiftCodeRequest(
-               "CITIUS12ABC",
-                "CITIBANK NA",
-                "US",
-                "UNITED STATES",
-                "TEST ADDRESS",
-                false
-        );
-
         return request;
     }
 }
