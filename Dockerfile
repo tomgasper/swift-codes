@@ -2,7 +2,7 @@ FROM eclipse-temurin:22-jdk AS builder
 
 WORKDIR /app
 COPY . .
-RUN ./mvnw clean package -DskipTests
+RUN ./mvnw clean package
 
 FROM eclipse-temurin:22-jre
 
