@@ -64,7 +64,7 @@ This will create the necessary Maven wrapper files (mvnw, mvnw.cmd, and .mvn dir
    - For local development, ensure PostgreSQL is running on port 5500
 
 ```
-docker-compose up -d db
+docker compose up -d db
 ```
 
 3. Build the project:
@@ -78,7 +78,7 @@ docker-compose up -d db
 
 1. Build and start the containers:
 ```
-docker-compose up -d
+docker compose up -d
 ```
 
 The application will be available at `http://localhost:8080`
@@ -87,7 +87,7 @@ The application will be available at `http://localhost:8080`
 
 1. Start PostgreSQL:
 ```
-docker-compose up -d db
+docker compose up -d db
 ```
 
 2. Run the application:
