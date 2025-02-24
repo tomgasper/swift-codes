@@ -26,7 +26,6 @@ public class SwiftCodeParserService {
     private final SwiftCodeRepository swiftCodeRepository;
     private final BankRepository bankRepository;
     private final CountryRepository countryRepository;
-    private final BatchProcessor<SwiftCode> batchProcessor;
     
     // Cache for countries and banks to avoid repeated database queries
     private final Map<String, Country> countryCache = new HashMap<>();
@@ -39,17 +38,15 @@ public class SwiftCodeParserService {
 
     public SwiftCodeParserService(SwiftCodeRepository swiftCodeRepository,
                                  BankRepository bankRepository,
-                                 CountryRepository countryRepository,
-                                 BatchProcessor<SwiftCode> batchProcessor) {
+                                 CountryRepository countryRepository) {
         this.swiftCodeRepository = swiftCodeRepository;
         this.bankRepository = bankRepository;
         this.countryRepository = countryRepository;
-        this.batchProcessor = batchProcessor;
     }
 
     @Transactional
     public void parseAndSave(String filePath) throws IOException {
-        // pre-load existing countries and banks
+        // Pre-load existing countries and banks
         countryRepository.findAll().forEach(country -> 
             countryCache.put(country.getIso2Code(), country));
         bankRepository.findAll().forEach(bank -> 
@@ -57,6 +54,7 @@ public class SwiftCodeParserService {
 
         List<Country> newCountries = new ArrayList<>();
         List<Bank> newBanks = new ArrayList<>();
+        List<SwiftCode> swiftCodes = new ArrayList<>();
 
         CSVFormat csvFormat = CSVFormat.Builder.create()
                 .setHeader(HEADERS)
@@ -70,44 +68,53 @@ public class SwiftCodeParserService {
         try (BufferedReader reader = Files.newBufferedReader(Path.of(filePath));
              CSVParser csvParser = new CSVParser(reader, csvFormat)) {
 
+            // first pass: collect all entities
             for (CSVRecord record : csvParser) {
-                processRecord(record, newCountries, newBanks);
+                processRecord(record, newCountries, newBanks, swiftCodes);
             }
             
-            // flush any remaining records
-            batchProcessor.flush(swiftCodeRepository::saveAll);
-            
-            // save new countries and banks
+            // save countries first
             if (!newCountries.isEmpty()) {
-                countryRepository.saveAll(newCountries);
+                List<Country> savedCountries = countryRepository.saveAll(newCountries);
+                savedCountries.forEach(country -> countryCache.put(country.getIso2Code(), country));
             }
+
+            // then save banks
             if (!newBanks.isEmpty()) {
-                bankRepository.saveAll(newBanks);
+                List<Bank> savedBanks = bankRepository.saveAll(newBanks);
+                savedBanks.forEach(bank -> bankCache.put(bank.getSwiftCode(), bank));
+            }
+
+            // finally save swift codes in batches
+            if (!swiftCodes.isEmpty()) {
+                for (int i = 0; i < swiftCodes.size(); i += 1000) {
+                    int end = Math.min(i + 1000, swiftCodes.size());
+                    swiftCodeRepository.saveAll(swiftCodes.subList(i, end));
+                }
             }
         }
     }
 
-    private void processRecord(CSVRecord record, List<Country> newCountries, List<Bank> newBanks) {
+    private void processRecord(CSVRecord record, List<Country> newCountries, List<Bank> newBanks, List<SwiftCode> swiftCodes) {
         String iso2Code = record.get("COUNTRY ISO2 CODE").trim().toUpperCase();
         String swiftCodeStr = record.get("SWIFT CODE").trim();
         String bankName = record.get("NAME").trim();
         String address = determineAddress(record);
 
-        // normalize SWIFT code -> append XXX for 8 char codes
         if (swiftCodeStr.length() == 8) {
             swiftCodeStr = swiftCodeStr + "XXX";
         }
         boolean isHeadquarter = swiftCodeStr.endsWith("XXX");
 
-        // get or create country
+        // Get or create country
         String countryName = record.get("COUNTRY NAME").trim().toUpperCase();
         Country country = getOrCreateCountry(iso2Code, countryName, newCountries);
 
-        // get or create bank with base SWIFT code (first 8 characters)
+        // Get or create bank with base SWIFT code (first 8 characters)
         String baseSwiftCode = swiftCodeStr.substring(0, 8);
         Bank bank = getOrCreateBank(baseSwiftCode, bankName, newBanks);
 
-        // create new SwiftCode entity
+        // Create SwiftCode entity
         SwiftCode swiftCode = new SwiftCode();
         swiftCode.setSwiftCode(swiftCodeStr);
         swiftCode.setBank(bank);
@@ -115,7 +122,7 @@ public class SwiftCodeParserService {
         swiftCode.setHeadquarter(isHeadquarter);
         swiftCode.setCountry(country);
 
-        batchProcessor.add(swiftCode, swiftCodeRepository::saveAll);
+        swiftCodes.add(swiftCode);
     }
 
     private String determineAddress(CSVRecord record) {

@@ -16,10 +16,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Optional;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -35,14 +35,12 @@ class SwiftCodeParserServiceTest {
 
     @Test
     void shouldParseAndSaveValidCSVFile() throws IOException {
-        // test CSV content
         String csvContent = """
             COUNTRY ISO2 CODE,SWIFT CODE,CODE TYPE,NAME,ADDRESS,TOWN NAME,COUNTRY NAME,TIME ZONE
             US,CITIUS33XXX,1,CITIBANK NA,399 PARK AVENUE,NEW YORK,UNITED STATES,EST
             US,CITIUS33LAX,1,CITIBANK NA,400 SOUTH GRAND AVE,LOS ANGELES,UNITED STATES,PST
             """;
 
-        // mock repository responses
         Country testCountry = new Country();
         testCountry.setIso2Code("US");
         testCountry.setName("UNITED STATES");
@@ -51,24 +49,21 @@ class SwiftCodeParserServiceTest {
         testBank.setSwiftCode("CITIUS33");
         testBank.setBankName("CITIBANK NA");
 
-        when(countryRepository.findById("US")).thenReturn(Optional.of(testCountry));
-        when(bankRepository.findBySwiftCode("CITIUS33")).thenReturn(Optional.of(testBank));
+        when(countryRepository.findAll()).thenReturn(List.of(testCountry));
+        when(bankRepository.findAll()).thenReturn(List.of(testBank));
 
-        Path tempFile = null;
-        try {
-            // create a temporary file with test content
-            tempFile = Files.createTempFile("test-swift-codes", ".csv");
-            Files.write(tempFile, csvContent.getBytes());
+        Path tempFile = createTempFileWithContent(csvContent);
+        swiftCodeParserService.parseAndSave(tempFile.toString());
 
-            swiftCodeParserService.parseAndSave(tempFile.toAbsolutePath().toString());
+        verify(swiftCodeRepository).saveAll(argThat(iterable -> {
+            List<SwiftCode> list = new ArrayList<>();
+            iterable.forEach(list::add);
+            return list.size() == 2 && 
+                   list.stream().anyMatch(sc -> sc.getSwiftCode().equals("CITIUS33XXX")) &&
+                   list.stream().anyMatch(sc -> sc.getSwiftCode().equals("CITIUS33LAX"));
+        }));
 
-            verify(swiftCodeRepository, times(2)).save(any(SwiftCode.class));
-            verify(countryRepository, times(2)).findById("US");
-            verify(bankRepository, times(2)).findBySwiftCode("CITIUS33");
-        } finally {
-            // clean up the temporary file
-            Files.deleteIfExists(tempFile);
-        }
+        Files.deleteIfExists(tempFile);
     }
 
     @Test
@@ -93,41 +88,40 @@ class SwiftCodeParserServiceTest {
             US,CITIUS33XXX,1,CITIBANK NA,399 PARK AVENUE,NEW YORK,UNITED STATES,EST
             """;
         
-        // Setup mocks
-        when(countryRepository.findById("US")).thenReturn(Optional.empty());
-        when(bankRepository.findBySwiftCode("CITIUS33")).thenReturn(Optional.empty());
-        
-        // Execute test
         Path tempFile = createTempFileWithContent(csvContent);
         swiftCodeParserService.parseAndSave(tempFile.toString());
         
-        // Verify
-        verify(swiftCodeRepository).save(argThat(swiftCode -> 
-            swiftCode.getSwiftCode().equals("CITIUS33XXX") &&
-            swiftCode.isHeadquarter()
-        ));
+        verify(swiftCodeRepository).saveAll(argThat(iterable -> {
+            List<SwiftCode> list = new ArrayList<>();
+            iterable.forEach(list::add);
+            return list.size() == 1 && 
+                   list.get(0).getSwiftCode().equals("CITIUS33XXX") &&
+                   list.get(0).isHeadquarter();
+        }));
         
         Files.deleteIfExists(tempFile);
     }
 
     @Test
     void shouldParseValidBranchRow() throws IOException {
-        // test CSV with branch (non-XXX) SWIFT code
         String csvContent = """
             COUNTRY ISO2 CODE,SWIFT CODE,CODE TYPE,NAME,ADDRESS,TOWN NAME,COUNTRY NAME,TIME ZONE
             US,CITIUS33LAX,1,CITIBANK NA,400 GRAND AVE,LOS ANGELES,UNITED STATES,PST
             """;
         
-        when(countryRepository.findById("US")).thenReturn(Optional.empty());
-        when(bankRepository.findBySwiftCode("CITIUS33")).thenReturn(Optional.empty());
+        when(countryRepository.findAll()).thenReturn(List.of());
+        when(bankRepository.findAll()).thenReturn(List.of());
         
         Path tempFile = createTempFileWithContent(csvContent);
         swiftCodeParserService.parseAndSave(tempFile.toString());
         
-        verify(swiftCodeRepository).save(argThat(swiftCode -> 
-            swiftCode.getSwiftCode().equals("CITIUS33LAX") &&
-            !swiftCode.isHeadquarter()
-        ));
+        verify(swiftCodeRepository).saveAll(argThat(iterable -> {
+            List<SwiftCode> list = new ArrayList<>();
+            iterable.forEach(list::add);
+            return list.size() == 1 && 
+                   list.get(0).getSwiftCode().equals("CITIUS33LAX") &&
+                   !list.get(0).isHeadquarter();
+        }));
         
         Files.deleteIfExists(tempFile);
     }
@@ -139,16 +133,19 @@ class SwiftCodeParserServiceTest {
             US,CITIUS33,1,CITIBANK NA,399 PARK AVENUE,NEW YORK,UNITED STATES,EST
             """;
         
-        when(countryRepository.findById("US")).thenReturn(Optional.empty());
-        when(bankRepository.findBySwiftCode("CITIUS33")).thenReturn(Optional.empty());
+        when(countryRepository.findAll()).thenReturn(List.of());
+        when(bankRepository.findAll()).thenReturn(List.of());
         
         Path tempFile = createTempFileWithContent(csvContent);
         swiftCodeParserService.parseAndSave(tempFile.toString());
         
-        verify(swiftCodeRepository).save(argThat(swiftCode -> 
-            swiftCode.getSwiftCode().equals("CITIUS33XXX") &&
-            swiftCode.isHeadquarter()
-        ));
+        verify(swiftCodeRepository).saveAll(argThat(iterable -> {
+            List<SwiftCode> list = new ArrayList<>();
+            iterable.forEach(list::add);
+            return list.size() == 1 && 
+                   list.get(0).getSwiftCode().equals("CITIUS33XXX") &&
+                   list.get(0).isHeadquarter();
+        }));
         
         Files.deleteIfExists(tempFile);
     }
@@ -160,16 +157,19 @@ class SwiftCodeParserServiceTest {
             us,CITIUS33XXX,1,CITIBANK NA,399 PARK AVENUE,NEW YORK,United States,EST
             """;
         
-        when(countryRepository.findById("US")).thenReturn(Optional.empty());
-        when(bankRepository.findBySwiftCode("CITIUS33")).thenReturn(Optional.empty());
+        when(countryRepository.findAll()).thenReturn(List.of());
+        when(bankRepository.findAll()).thenReturn(List.of());
         
         Path tempFile = createTempFileWithContent(csvContent);
         swiftCodeParserService.parseAndSave(tempFile.toString());
         
-        verify(countryRepository).save(argThat(country -> 
-            country.getIso2Code().equals("US") &&
-            country.getName().equals("UNITED STATES")
-        ));
+        verify(countryRepository).saveAll(argThat(iterable -> {
+            List<Country> list = new ArrayList<>();
+            iterable.forEach(list::add);
+            return list.size() == 1 && 
+                   list.get(0).getIso2Code().equals("US") &&
+                   list.get(0).getName().equals("UNITED STATES");
+        }));
         
         Files.deleteIfExists(tempFile);
     }
@@ -183,21 +183,20 @@ class SwiftCodeParserServiceTest {
             FR,BNPAFR21,1,BNP PARIBAS,,,FRANCE,CET
             """;
         
-        when(countryRepository.findById(anyString())).thenReturn(Optional.empty());
-        when(bankRepository.findBySwiftCode(anyString())).thenReturn(Optional.empty());
+        when(countryRepository.findAll()).thenReturn(List.of());
+        when(bankRepository.findAll()).thenReturn(List.of());
         
         Path tempFile = createTempFileWithContent(csvContent);
         swiftCodeParserService.parseAndSave(tempFile.toString());
         
-        verify(swiftCodeRepository).save(argThat(swiftCode -> 
-            swiftCode.getAddress().equals("NEW YORK, UNITED STATES")
-        ));
-        verify(swiftCodeRepository).save(argThat(swiftCode -> 
-            swiftCode.getAddress().equals("1 CHURCHILL PLACE")
-        ));
-        verify(swiftCodeRepository).save(argThat(swiftCode -> 
-            swiftCode.getAddress().equals("FRANCE")
-        ));
+        verify(swiftCodeRepository).saveAll(argThat(iterable -> {
+            List<SwiftCode> list = new ArrayList<>();
+            iterable.forEach(list::add);
+            return list.size() == 3 &&
+                   list.stream().anyMatch(sc -> sc.getAddress().equals("NEW YORK, UNITED STATES")) &&
+                   list.stream().anyMatch(sc -> sc.getAddress().equals("1 CHURCHILL PLACE")) &&
+                   list.stream().anyMatch(sc -> sc.getAddress().equals("FRANCE"));
+        }));
         
         Files.deleteIfExists(tempFile);
     }

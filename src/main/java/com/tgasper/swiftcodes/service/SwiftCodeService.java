@@ -126,13 +126,18 @@ public class SwiftCodeService {
 
         // get count of the swift codes
         String baseSwiftCode = swiftCode.substring(0, 8);
-        long count = swiftCodeRepository.countBySwiftCodeStartingWith(swiftCode);
-        if (count == 0) {
-            // nothing to delete
+
+        // nothing to delete if the swift code does not exist
+        if (!swiftCodeRepository.existsById(swiftCode)) {
             throw new ResourceNotFoundException(
                     String.format("SWIFT code %s not found", swiftCode));
         }
-        else if (count == 1) {
+
+        // count the number of swift codes
+        long count = swiftCodeRepository.countBySwiftCodeStartingWith(baseSwiftCode);
+
+        // at least one swift code must exist
+        if (count == 1) {
             // delete the entry from bank table as well
             swiftCodeRepository.deleteById(swiftCode);
             bankService.deleteBank(baseSwiftCode);
