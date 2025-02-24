@@ -52,13 +52,7 @@ git clone https://github.com/tomgasper/swift-codes.git
 cd swift-codes
 ```
 
-2. Download Maven Wrapper:
-```
-mvn wrapper:wrapper
-```
-This will create the necessary Maven wrapper files (mvnw, mvnw.cmd, and .mvn directory)
-
-3. Setup the database:
+2. Setup the database:
    - The application uses PostgreSQL
    - Default configuration can be found in `application.properties`
    - For local development, ensure PostgreSQL is running on port 5500
