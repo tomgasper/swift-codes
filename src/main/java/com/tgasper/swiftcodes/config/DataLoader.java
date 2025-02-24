@@ -1,17 +1,18 @@
 package com.tgasper.swiftcodes.config;
 
 import java.io.IOException;
-import java.net.URL;
+import java.io.InputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.net.URISyntaxException;
 import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
+import org.springframework.core.io.ClassPathResource;
 import com.tgasper.swiftcodes.service.SwiftCodeParserService;
 
 @Component
@@ -50,19 +51,35 @@ public class DataLoader implements CommandLineRunner {
                     throw new IOException("File not found: " + importPath);
                 }
             } else {
-                // sse default path from resources
-                URL resource = getClass().getResource("/swift-codes.csv");
-                if (resource == null) {
-                    throw new IOException("Could not find swift-codes.csv in resources");
-                }
-                csvPath = Paths.get(resource.toURI());
+                // Use default path from resources
+                csvPath = loadDefaultResourceFile();
             }
 
             logger.info("Importing data from: {}", csvPath);
             swiftCodeParserService.parseAndSave(csvPath.toString());
             logger.info("Data import completed successfully");
-        } catch (IOException | URISyntaxException e) {
+            logger.info("Started server...");
+        } catch (IOException e) {
             logger.error("Error during data import: {}", e.getMessage(), e);
+        }
+    }
+
+    private Path loadDefaultResourceFile() throws IOException {
+        try {
+            // create a temporary file
+            Path tempFile = Files.createTempFile("swift-codes", ".csv");
+            
+            // copy the resource file content to the temporary file
+            try (InputStream is = new ClassPathResource("swift-codes.csv").getInputStream()) {
+                Files.copy(is, tempFile, StandardCopyOption.REPLACE_EXISTING);
+            }
+            
+            // delete the temporary file when the JVM exits
+            tempFile.toFile().deleteOnExit();
+            
+            return tempFile;
+        } catch (IOException e) {
+            throw new IOException("Could not load default swift-codes.csv from resources", e);
         }
     }
 }
