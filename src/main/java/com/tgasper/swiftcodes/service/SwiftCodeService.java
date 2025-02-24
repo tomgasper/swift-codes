@@ -31,12 +31,21 @@ public class SwiftCodeService {
         this.bankRepository = bankRepository;
     }
 
-    public SwiftCodeResponse getSwiftCodeDetails(String swiftCode) {
-        if (swiftCode == null || swiftCode.trim().isEmpty()) {
+    public SwiftCodeResponse getSwiftCodeDetails(String inputCode) {
+        // swift code cannot be null or empty
+        if (inputCode == null || inputCode.trim().isEmpty()) {
             throw new SwiftCodeValidationException("SWIFT code cannot be null or empty");
         }
 
-        SwiftCode mainCode = swiftCodeRepository.findById(swiftCode.toUpperCase())
+        // swift code length must be 8 or 11
+        if (inputCode.length() != 8 && inputCode.length() != 11) {
+            throw new SwiftCodeValidationException("Invalid SWIFT code length");
+        }
+
+        // assume headquarter if length is 8 and format to uppercase
+        String swiftCode = (inputCode.length() == 8 ? (inputCode + "XXX") : inputCode).toUpperCase();
+
+        SwiftCode mainCode = swiftCodeRepository.findById(swiftCode)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         String.format("SWIFT code %s not found", swiftCode)));
 
