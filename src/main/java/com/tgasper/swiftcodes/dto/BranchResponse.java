@@ -42,12 +42,12 @@ public class BranchResponse {
         this.countryISO2 = countryISO2;
     }
 
-    public boolean isHeadquarter() {
+    public boolean getIsHeadquarter() {
         return isHeadquarter;
     }
 
-    public void setHeadquarter(boolean headquarter) {
-        isHeadquarter = headquarter;
+    public void setIsHeadquarter(boolean isHeadquarter) {
+        this.isHeadquarter = isHeadquarter;
     }
 
     public String getSwiftCode() {

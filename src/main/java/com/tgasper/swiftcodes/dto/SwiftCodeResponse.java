@@ -67,12 +67,12 @@ public class SwiftCodeResponse {
         this.countryName = countryName;
     }
 
-    public boolean isHeadquarter() {
+    public boolean getIsHeadquarter() {
         return isHeadquarter;
     }
 
-    public void setHeadquarter(boolean headquarter) {
-        isHeadquarter = headquarter;
+    public void setIsHeadquarter(boolean isHeadquarter) {
+        this.isHeadquarter = isHeadquarter;
     }
 
     public String getSwiftCode() {
